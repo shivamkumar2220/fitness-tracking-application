@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>User Dashboard</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<header>
+    <h1 th:text="'Welcome, ' + ${user.name}"></h1>
+    <p>Track workouts, view progress, and join challenges.</p>
+</header>
+<main>
+    <div class="notice" th:if="${userNotice}" th:text="${userNotice}"></div>
+    <section class="grid">
+        <div class="card">
+            <h2>Profile</h2>
+            <form th:action="@{/user/{userId}/profile(userId=${user.id})}" th:object="${user}" method="post" class="form-grid">
+                <div>
+                    <label>Name</label>
+                    <input type="text" th:field="*{name}">
+                </div>
+                <div>
+                    <label>Email</label>
+                    <input type="email" th:field="*{email}">
+                </div>
+                <div>
+                    <label>Password</label>
+                    <input type="text" th:field="*{password}">
+                </div>
+                <div>
+                    <label>Goals</label>
+                    <textarea th:field="*{goals}" rows="3"></textarea>
+                </div>
+                <div>
+                    <button type="submit">Update Profile</button>
+                </div>
+            </form>
+        </div>
+        <div class="card">
+            <h2>Progress Tracking</h2>
+            <div class="flex">
+                <div class="stat-pill">
+                    <span>Workouts</span>
+                    <span th:text="${workouts.size()}"></span>
+                </div>
+                <div class="stat-pill">
+                    <span>Minutes</span>
+                    <span th:text="${totalMinutes}"></span>
+                </div>
+                <div class="stat-pill">
+                    <span>Challenges</span>
+                    <span th:text="${joinedChallenges.size()}"></span>
+                </div>
+            </div>
+            <p th:text="${user.goals} ?: 'No goals set yet.'"></p>
+            <div class="chart-container">
+                <canvas id="workoutBreakdownChart"></canvas>
+            </div>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>Workout Log</h2>
+        <form th:action="@{/user/{userId}/workouts(userId=${user.id})}" th:object="${newWorkout}" method="post" class="grid">
+            <div>
+                <label>Type</label>
+                <input type="text" th:field="*{type}" required>
+            </div>
+            <div>
+                <label>Duration (min)</label>
+                <input type="number" th:field="*{durationMinutes}" required>
+            </div>
+            <div>
+                <label>Intensity</label>
+                <select th:field="*{intensity}">
+                    <option value="Low">Low</option>
+                    <option value="Medium">Medium</option>
+                    <option value="High">High</option>
+                </select>
+            </div>
+            <div>
+                <button type="submit">Log Workout</button>
+            </div>
+        </form>
+
+        <table>
+            <thead>
+            <tr>
+                <th>Type</th>
+                <th>Duration</th>
+                <th>Intensity</th>
+                <th>Date</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="workout : ${workouts}">
+                <td th:text="${workout.type}"></td>
+                <td th:text="${workout.durationMinutes} + ' min'"></td>
+                <td th:text="${workout.intensity}"></td>
+                <td th:text="${#temporals.format(workout.loggedAt, 'dd MMM yyyy HH:mm')}"></td>
+            </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="grid">
+        <div class="card">
+            <h2>Fitness Challenges</h2>
+            <ul class="list-reset">
+                <li th:each="challenge : ${challenges}">
+                    <strong th:text="${challenge.name}"></strong>
+                    <span th:text="${' · ' + challenge.description}"></span>
+                    <p class="badge"
+                       th:text="${#temporals.format(challenge.startDate, 'dd MMM') + ' - ' + #temporals.format(challenge.endDate, 'dd MMM')}"></p>
+                    <form th:action="@{/user/{userId}/challenges/{challengeId}/join(userId=${user.id}, challengeId=${challenge.id})}"
+                          method="post">
+                        <button type="submit"
+                                th:disabled="${joinedChallengeIds.contains(challenge.id)}"
+                                th:text="${joinedChallengeIds.contains(challenge.id)} ? 'Joined' : 'Join'"></button>
+                    </form>
+                </li>
+            </ul>
+        </div>
+        <div class="card">
+            <h2>Challenge History</h2>
+            <ul class="list-reset" th:if="${!joinedChallenges.isEmpty()}">
+                <li th:each="challenge : ${joinedChallenges}">
+                    <strong th:text="${challenge.name}"></strong>
+                    <span th:text="${' · ' + challenge.description}"></span>
+                    <span class="badge"
+                          th:text="${#temporals.format(challenge.startDate, 'dd MMM') + ' - ' + #temporals.format(challenge.endDate, 'dd MMM')}"></span>
+                </li>
+            </ul>
+            <p th:if="${joinedChallenges.isEmpty()}">Join a challenge to populate your history.</p>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>Fitness Content</h2>
+        <ul class="list-reset">
+            <li th:each="item : ${contentFeed}">
+                <strong th:text="${item.title}"></strong>
+                <p th:text="${item.body}"></p>
+            </li>
+        </ul>
+    </section>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script th:inline="javascript">
+    window.userDashboardData = {
+        totalWorkouts: [[${workouts.size()}]],
+        totalMinutes: [[${totalMinutes}]],
+        workoutBreakdown: /*[[${workoutBreakdown}]]*/ {}
+    };
+</script>
+<script th:src="@{/js/user-dashboard.js}"></script>
+</body>
+</html>
+
+

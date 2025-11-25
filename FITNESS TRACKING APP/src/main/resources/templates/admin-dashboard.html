@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<header>
+    <h1>Admin Dashboard</h1>
+    <p>Manage users, content, and system settings</p>
+</header>
+<main>
+    <section class="grid">
+        <div class="card">
+            <h2>Fitness Statistics</h2>
+            <div class="flex">
+                <div class="stat-pill">
+                    <span>Admins</span>
+                    <span th:text="${adminCount}"></span>
+                </div>
+                <div class="stat-pill">
+                    <span>Users</span>
+                    <span th:text="${userCount}"></span>
+                </div>
+                <div class="stat-pill">
+                    <span>Workouts</span>
+                    <span th:text="${totalWorkouts}"></span>
+                </div>
+                <div class="stat-pill">
+                    <span>Challenges</span>
+                    <span th:text="${stats.challengeCount()}"></span>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="userMixChart"></canvas>
+            </div>
+        </div>
+        <div class="card">
+            <h2>System Activity</h2>
+            <p>Monitor latest system changes and approvals.</p>
+            <ul class="list-reset">
+                <li th:each="content : ${contentItems}">
+                    <div class="flex-between">
+                        <span th:text="${content.title}"></span>
+                        <span class="badge"
+                              th:text="${content.approved} ? 'Approved' : 'Pending'"></span>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>User Management</h2>
+        <form th:action="@{/admin/users}" th:object="${newUser}" method="post" class="grid">
+            <div>
+                <label>Name</label>
+                <input type="text" th:field="*{name}" required>
+            </div>
+            <div>
+                <label>Email</label>
+                <input type="email" th:field="*{email}" required>
+            </div>
+            <div>
+                <label>Password</label>
+                <input type="text" th:field="*{password}" required>
+            </div>
+            <div>
+                <label>Role</label>
+                <select th:field="*{role}">
+                    <option th:value="${T(com.sach.fitnesstracker.model.Role).USER}">User</option>
+                    <option th:value="${T(com.sach.fitnesstracker.model.Role).ADMIN}">Admin</option>
+                </select>
+            </div>
+            <div>
+                <label>Goals</label>
+                <input type="text" th:field="*{goals}">
+            </div>
+            <div>
+                <button type="submit">Save User</button>
+            </div>
+        </form>
+
+        <table>
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="user : ${users}">
+                <td th:text="${user.name}"></td>
+                <td th:text="${user.email}"></td>
+                <td th:text="${user.role}"></td>
+                <td>
+                    <form th:action="@{/admin/users/{id}/delete(id=${user.id})}" method="post">
+                        <button class="secondary" type="submit">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="grid">
+        <div class="card">
+            <h2>Fitness Content Management</h2>
+            <form th:action="@{/admin/content}" th:object="${newContent}" method="post">
+                <label>Title</label>
+                <input type="text" th:field="*{title}" required>
+                <label>Body</label>
+                <textarea th:field="*{body}" required></textarea>
+                <button type="submit">Submit Content</button>
+            </form>
+            <div class="chart-container">
+                <canvas id="contentApprovalChart"></canvas>
+            </div>
+            <ul>
+                <li th:each="content : ${contentItems}">
+                    <strong th:text="${content.title}"></strong>
+                    <span th:text="${content.approved} ? ' (Approved)' : ' (Pending)'" ></span>
+                    <form th:action="@{/admin/content/{id}/approve(id=${content.id})}" method="post">
+                        <input type="hidden" name="approved" value="true">
+                        <button type="submit">Approve</button>
+                    </form>
+                </li>
+            </ul>
+        </div>
+        <div class="card">
+            <h2>System Settings</h2>
+            <form th:action="@{/admin/settings}" th:object="${newSetting}" method="post">
+                <label>Key</label>
+                <input type="text" th:field="*{keyName}" required>
+                <label>Value</label>
+                <input type="text" th:field="*{value}" required>
+                <button type="submit">Save Setting</button>
+            </form>
+            <ul>
+                <li th:each="setting : ${settings}">
+                    <strong th:text="${setting.keyName}"></strong>: <span th:text="${setting.value}"></span>
+                </li>
+            </ul>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>Fitness Challenges</h2>
+        <form th:action="@{/admin/challenges}" method="post" class="grid">
+            <div>
+                <label>Name</label>
+                <input type="text" name="name" required>
+            </div>
+            <div>
+                <label>Description</label>
+                <input type="text" name="description" required>
+            </div>
+            <div>
+                <label>Start Date</label>
+                <input type="date" name="startDate" required>
+            </div>
+            <div>
+                <label>End Date</label>
+                <input type="date" name="endDate" required>
+            </div>
+            <div>
+                <button type="submit">Create Challenge</button>
+            </div>
+        </form>
+        <ul class="list-reset">
+            <li th:each="challenge : ${challenges}">
+                <div class="flex-between">
+                    <div>
+                        <strong th:text="${challenge.name}"></strong>
+                        <span th:text="${' · ' + challenge.description}"></span>
+                    </div>
+                    <span class="badge"
+                          th:text="${#temporals.format(challenge.startDate, 'dd MMM') + ' - ' + #temporals.format(challenge.endDate, 'dd MMM')}"></span>
+                </div>
+            </li>
+        </ul>
+    </section>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script th:inline="javascript">
+    window.adminDashboardData = {
+        adminCount: [[${stats.adminCount()}]],
+        userCount: [[${stats.userCount()}]],
+        totalWorkouts: [[${stats.totalWorkouts()}]],
+        approvedContent: [[${stats.approvedContent()}]],
+        pendingContent: [[${stats.pendingContent()}]],
+        challengeCount: [[${stats.challengeCount()}]]
+    };
+</script>
+<script th:src="@{/js/admin-dashboard.js}"></script>
+</body>
+</html>
+
+
