@@ -1,6 +1,6 @@
 
 
-# Fitness Tracking App
+## Fitness Tracking App
 
 A lightweight Core Java application for managing user profiles, logging workouts, tracking calories, and saving progress using file-based storage. Designed for beginners, academic submissions, and basic personal use.
 
